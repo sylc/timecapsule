@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    // Note that the exe do not open when called with git bash
+    "compile": "cd client && deno task build && cd .. && deno compile -A --unstable-kv --no-terminal --include client/build main.ts"
+  }
+}

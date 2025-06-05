@@ -1,0 +1,39 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@std/fs@0.229.3": "0.229.3",
+    "jsr:@std/path@1.0.8": "1.0.8",
+    "jsr:@std/ulid@*": "1.0.0",
+    "jsr:@webui/deno-webui@*": "2.5.8",
+    "jsr:@zip-js/zip-js@2.7.60": "2.7.60",
+    "npm:sv@*": "0.8.7"
+  },
+  "jsr": {
+    "@std/fs@0.229.3": {
+      "integrity": "783bca21f24da92e04c3893c9e79653227ab016c48e96b3078377ebd5222e6eb"
+    },
+    "@std/path@1.0.8": {
+      "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
+    },
+    "@std/ulid@1.0.0": {
+      "integrity": "d41c3d27a907714413649fee864b7cde8d42ee68437d22b79d5de4f81d808780"
+    },
+    "@webui/deno-webui@2.5.8": {
+      "integrity": "c3316d6d103a66f29a672ed7e3773cc73c3e5045173050f5f7726e9350e87d45",
+      "dependencies": [
+        "jsr:@std/fs",
+        "jsr:@std/path",
+        "jsr:@zip-js/zip-js"
+      ]
+    },
+    "@zip-js/zip-js@2.7.60": {
+      "integrity": "6bb6cf0d02b64ca9acba8c7bc072293609ec3bad584db2b5cf3bb089e031ea0e"
+    }
+  },
+  "npm": {
+    "sv@0.8.7": {
+      "integrity": "sha512-8HIuAuQWk/4xyFrEkNhkR7WSQ63qYs9WnF7rVvALIIQjnY25VDrPx6eWa7yR5eFL4NXXFFN6+jPJdbW50xSCvg==",
+      "bin": true
+    }
+  }
+}
