@@ -1,11 +1,15 @@
 <script lang="ts">
   import { Input, Button } from "flowbite-svelte"
+    import TimerDisplay from "./TimerDisplay.svelte";
   let status = $state({started: 0})
   let taskName = $state('x')
-  // onM
 
   const onToggleStart = async () => {  
-    status = await webui.test_time()
+    if (status.started === 0) {
+      status = { started: await webui.test_time() }
+    } else {
+      status = { started: 0 }
+    }
   }
 
   const updateName = async () => {
@@ -23,9 +27,10 @@
     <Input size="sm" 
       bind:value={taskName} 
       onKeydown={updateName}/>  
-    <Button onclick={onToggleStart}>{status ? 'start' : "stop"}</Button>
+    <Button onclick={onToggleStart}>{status.started === 0 ? 'start' : "stop"}</Button>
   </div>
   
+  <TimerDisplay start={status.started}/>
   <div>
     {status}
   </div>

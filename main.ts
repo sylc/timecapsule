@@ -60,8 +60,10 @@ async function clearActiveTask() {
 // per week, per projects
 
 webui.setPort(8081);
-await webui.show(index);
+// await webui.show(index);
 
+// For developing use the below
+//
 // Show a new window and point to our custom web server
 // Assuming the custom web server is running on port
 // 8080...
