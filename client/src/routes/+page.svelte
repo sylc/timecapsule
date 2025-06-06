@@ -1,37 +1,44 @@
 <script lang="ts">
-  import { Input, Button } from "flowbite-svelte"
-    import TimerDisplay from "./TimerDisplay.svelte";
-  let status = $state({started: 0})
-  let taskName = $state('x')
+  import { Button, Input } from "flowbite-svelte";
+  import { format } from "date-fns";
+  import TimerDisplay from "./TimerDisplay.svelte";
+  let status = $state({ started: 0 });
+  let formatted = $derived(
+    format(new Date(status.started), "dd/MM HH:MM aa"),
+  );
+  let taskName = $state("x");
 
-  const onToggleStart = async () => {  
+  const onToggleStart = async () => {
     if (status.started === 0) {
-      status = { started: await webui.test_time() }
+      // start a new task
+      status = { started: parseInt(await webui.test_time(), 10) };
     } else {
-      status = { started: 0 }
+      status = { started: 0 };
     }
-  }
+  };
 
   const updateName = async () => {
     // if timer is running, update the current name
     // if not running do nothing special.
-  }
-
+  };
 </script>
 
 <div class="p-2">
-
   <h1 class="text-slate-700">Timer</h1>
-  
+
   <div class="flex space-x-2">
-    <Input size="sm" 
-      bind:value={taskName} 
-      onKeydown={updateName}/>  
-    <Button onclick={onToggleStart}>{status.started === 0 ? 'start' : "stop"}</Button>
+    <Input size="sm" bind:value={taskName} onKeydown={updateName} />
+    <Button onclick={onToggleStart}>{
+      status.started === 0 ? "start" : "stop"
+    }</Button>
   </div>
-  
-  <TimerDisplay start={status.started}/>
-  <div>
-    {status}
+
+  <div class="flex py-2">
+    <TimerDisplay start={status.started} />
+    <div class="w-34 bg-yellow-100">
+      {#if status.started !== 0}
+        {formatted}
+      {/if}
+    </div>
   </div>
 </div>

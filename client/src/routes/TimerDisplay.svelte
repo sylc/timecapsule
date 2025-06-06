@@ -1,18 +1,26 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+  import { onMount } from "svelte";
 
-  let { start } = $props()
-  let duration = $state(0)
+  let { start } = $props();
+  let duration = $state(0);
+  const formatted = $derived.by(() => {
+    const seconds = Math.floor((duration / 1000) % 60);
+    const minutes = Math.floor((duration / (1000 * 60)) % 60);
+    const hours = Math.floor(duration / (1000 * 60 * 60));
 
+    return { hours, minutes, seconds };
+  });
 
   onMount(() => {
     let x = setInterval(() => {
       if (start === 0) duration = 0;
-      else duration = Date.now() - start
-    }, 1000)
-  })
+      else duration = Date.now() - start;
+    }, 1000);
+  });
 </script>
 
 <div class="p-2">
-  {duration}
+  {formatted.hours.toFixed().padStart(2, "0")}:{
+    formatted.minutes.toFixed().padStart(2, "0")
+  }:{formatted.seconds.toFixed().padStart(2, "0")}
 </div>

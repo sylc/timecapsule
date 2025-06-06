@@ -7,8 +7,6 @@ webui.setRootFolder("./client/build");
 
 const kv = await Deno.openKv();
 
-const index = await Deno.readTextFile("./client/build/index.html");
-
 webui.bind("startButton", (e) => {
   console.log(`ui send "${e.element}" ss`);
   return "backend response";
@@ -60,6 +58,7 @@ async function clearActiveTask() {
 // per week, per projects
 
 webui.setPort(8081);
+const index = await Deno.readTextFile("./client/build/index.html");
 // await webui.show(index);
 
 // For developing use the below
