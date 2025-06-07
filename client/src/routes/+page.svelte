@@ -1,20 +1,47 @@
 <script lang="ts">
   import { Button, Input } from "flowbite-svelte";
   import { format } from "date-fns";
+  import { ulid } from "@std/ulid";
   import TimerDisplay from "./TimerDisplay.svelte";
-  let status = $state({ started: 0 });
+  import { onMount } from "svelte";
+  let status = $state({ started: 0, taskId: "", taskName: "" });
   let formatted = $derived(
     format(new Date(status.started), "dd/MM HH:MM aa"),
   );
   let taskName = $state("x");
+  let listOfTasks: {
+    id: string;
+    name: string;
+    start: string;
+    stop: string;
+  }[] = $state([]);
+
+  onMount(async () => {
+    listOfTasks = JSON.parse(await webui.tasks());
+  });
+
+  let tasksByDay = $derived.by(() => {
+    return listOfTasks;
+  });
 
   const onToggleStart = async () => {
     if (status.started === 0) {
       // start a new task
-      status = { started: parseInt(await webui.test_time(), 10) };
+      const taskId = ulid();
+      status.started = Date.now();
+      status.taskId = taskId;
+
+      await webui.startNewTask(taskId, taskName);
     } else {
-      status = { started: 0 };
+      await webui.stopTask(status.taskId);
+      status = { started: 0, taskId: "", taskName: "" };
+      listOfTasks = JSON.parse(await webui.tasks());
     }
+  };
+
+  const onDeleteTask = async (taskId: string) => {
+    await webui.deleteTask(taskId);
+    listOfTasks = JSON.parse(await webui.tasks());
   };
 
   const updateName = async () => {
@@ -40,5 +67,14 @@
         {formatted}
       {/if}
     </div>
+  </div>
+  <div>
+    {#each tasksByDay as t}
+      <div>
+        {t.name} - {t.start} - {t.stop} - <Button
+          onclick={() => onDeleteTask(t.id)}
+        >delete</Button>
+      </div>
+    {/each}
   </div>
 </div>

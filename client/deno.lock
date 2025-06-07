@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "npm:@jsr/std__ulid@1": "1.0.0",
     "npm:@sveltejs/adapter-static@^3.0.8": "3.0.8_@sveltejs+kit@2.21.1__@sveltejs+vite-plugin-svelte@5.0.3___svelte@5.33.11____acorn@8.14.1___vite@6.3.5____picomatch@4.0.2__svelte@5.33.11___acorn@8.14.1__vite@6.3.5___picomatch@4.0.2__acorn@8.14.1_@sveltejs+vite-plugin-svelte@5.0.3__svelte@5.33.11___acorn@8.14.1__vite@6.3.5___picomatch@4.0.2_svelte@5.33.11__acorn@8.14.1_vite@6.3.5__picomatch@4.0.2",
     "npm:@sveltejs/kit@^2.16.0": "2.21.1_@sveltejs+vite-plugin-svelte@5.0.3__svelte@5.33.11___acorn@8.14.1__vite@6.3.5___picomatch@4.0.2_svelte@5.33.11__acorn@8.14.1_vite@6.3.5__picomatch@4.0.2_acorn@8.14.1",
     "npm:@sveltejs/vite-plugin-svelte@5": "5.0.3_svelte@5.33.11__acorn@8.14.1_vite@6.3.5__picomatch@4.0.2",
@@ -213,6 +214,10 @@
         "@jridgewell/resolve-uri",
         "@jridgewell/sourcemap-codec"
       ]
+    },
+    "@jsr/std__ulid@1.0.0": {
+      "integrity": "sha512-RvVolUwRoFtoSuYZROBmhCYEIuI4xsxeHjGGbJQZVDCBnDBJwfm16vOJyE1Va9+BnTl1iW7o1nCloBI+EQAWVg==",
+      "tarball": "https://npm.jsr.io/~/11/@jsr/std__ulid/1.0.0.tgz"
     },
     "@napi-rs/wasm-runtime@0.2.10": {
       "integrity": "sha512-bCsCyeZEwVErsGmyPNSzwfwFn4OdxBj0mmv6hOFucB/k81Ojdu68RbZdxYsRQUPc9l6SU5F/cG+bXgWs3oUgsQ==",
@@ -1080,6 +1085,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@jsr/std__ulid@1",
         "npm:@sveltejs/adapter-static@^3.0.8",
         "npm:@sveltejs/kit@^2.16.0",
         "npm:@sveltejs/vite-plugin-svelte@^5.1.0",
