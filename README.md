@@ -1,6 +1,9 @@
 # Tak
 
-tak is a desktop app to record the time your are working on your tasks.
+`tak` is a desktop app timer. It allows to record the time of tasks your are
+working on.
+
+![alt text](image.png)
 
 To develop: `deno task dev`
 
