@@ -1,17 +1,13 @@
 import { WebUI } from "jsr:@webui/deno-webui";
-import { ulid } from "jsr:@std/ulid";
 
 const webui = new WebUI();
 WebUI.setFolderMonitor(true);
 webui.setRootFolder("./client/build");
 
-const kv = await Deno.openKv();
+Deno.mkdirSync("./.tak", { recursive: true });
+const kv = await Deno.openKv("./.tak/db");
 
-async function createEntry(name: string) {
-  const entryId = ulid();
-  await kv.set(["entries", entryId, "name"], name);
-}
-
+// tasks
 webui.bind("startNewTask", async (e: WebUI.Event) => {
   console.log(e.arg.string(0), e.arg.string(1));
   await startNewTask(e.arg.string(0), e.arg.string(1));
@@ -22,7 +18,7 @@ webui.bind("stopTask", async (e: WebUI.Event) => {
   return JSON.stringify(await stop(e.arg.string(0)));
 });
 
-webui.bind("tasks", async (e: WebUI.Event) => {
+webui.bind("tasks", async (_e: WebUI.Event) => {
   return JSON.stringify(await tasks());
 });
 
