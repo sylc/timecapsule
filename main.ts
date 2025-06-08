@@ -89,14 +89,18 @@ async function clearActiveTask() {
 // per week, per projects
 
 webui.setPort(8081);
-const index = await Deno.readTextFile("./client/build/index.html");
-// await webui.show(index);
 
-// For developing use the below
-//
-// Show a new window and point to our custom web server
-// Assuming the custom web server is running on port
-// 8080...
-await webui.showBrowser("http://localhost:5173/", WebUI.Browser.AnyBrowser);
+if (Deno.env.get("DEV") === "true") {
+  // For developing use the below
+  //
+  // Show a new window and point to our custom web server
+  // Assuming the custom web server is running on port
+  // 5173...
+  await webui.showBrowser("http://localhost:5173/", WebUI.Browser.AnyBrowser);
+} else {
+  // use the build
+  const index = await Deno.readTextFile("./client/build/index.html");
+  await webui.show(index);
+}
 
 await WebUI.wait();

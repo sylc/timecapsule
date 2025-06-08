@@ -5,7 +5,7 @@
     "dev-client": "cd client && deno task dev",
     // we use sleep to make give time to the client to start.
     // sometimes, like with new package version, it take time and the server closes.
-    "dev-server": "sleep 4 && deno run -A --unstable-kv main.ts",
+    "dev-server": "sleep 4 && DEV=true deno run -A --unstable-kv main.ts",
     "dev": {
       "dependencies": ["dev-client", "dev-server"]
     }
