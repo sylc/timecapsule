@@ -12,6 +12,7 @@
   import { onMount } from "svelte";
   import { formatDay, formatDuration } from "./utils";
   import Duration from "./Duration.svelte";
+  import EditableDiv from "./EditableDiv.svelte";
   let status = $state({ started: 0, taskId: "", taskName: "" });
   let formatted = $derived(
     format(new Date(status.started), "dd/MM HH:MM aa"),
@@ -99,9 +100,9 @@
     listOfTasks = JSON.parse(await webui.tasks());
   };
 
-  const updateName = async () => {
-    // if timer is running, update the current name
-    // if not running do nothing special.
+  const updateTaskName = async (taskId: string, newValue: string) => {
+    await webui.updateTaskName(taskId, newValue);
+    listOfTasks = JSON.parse(await webui.tasks());
   };
 </script>
 
@@ -140,13 +141,16 @@
     </div>
     <div class="flex gap-x-2 text-slate-700">
       <div class="flex">
-        Today: <Duration duration={todayTotal} />
+        Today:&nbsp;<Duration duration={todayTotal} type="hourFractions" />
       </div>
       <div class="text-xs" style="line-height: 2; color: gray">
         &#x1f534;&#xfe0e;
       </div>
       <div class="flex">
-        This Week: <Duration duration={thisWeekTotal} />
+        This Week:&nbsp;<Duration
+          duration={thisWeekTotal}
+          type="hourFractions"
+        />
       </div>
     </div>
   </div>
@@ -162,10 +166,16 @@
           <div class="flex gap-x-2 justify-between border-t-1 border-slate-300 py-1">
             <div class="flex grow-1">
               <div class="grow-1">
-                <span class="font-semibold">{taskForDay.name}</span>
-                <br />
-                {formatDay(taskForDay.start)}
-                - {formatDay(taskForDay.stop)}
+                <EditableDiv
+                  text={taskForDay.name}
+                  onSubmit={(newValue) =>
+                  updateTaskName(taskForDay.id, newValue)}
+                  withPencil="hover"
+                />
+                <div>
+                  {formatDay(taskForDay.start)}
+                  - {formatDay(taskForDay.stop)}
+                </div>
               </div>
               <Duration
                 duration={formatDuration(taskForDay.start, taskForDay.stop)}

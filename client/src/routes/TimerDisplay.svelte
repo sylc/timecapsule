@@ -16,6 +16,7 @@
       if (start === 0) duration = 0;
       else duration = Date.now() - start;
     }, 1000);
+    return () => clearInterval(x);
   });
 </script>
 

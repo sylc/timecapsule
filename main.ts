@@ -29,6 +29,13 @@ webui.bind("deleteTask", async (e: WebUI.Event) => {
   return JSON.stringify(await tasks());
 });
 
+webui.bind("updateTaskName", async (e: WebUI.Event) => {
+  const taskId = e.arg.string(0);
+  const newName = e.arg.string(1);
+  console.log("update taskName", taskId, newName);
+  await updateTaskName(taskId, newName);
+});
+
 async function startNewTask(entryId: string, taskName: string) {
   await setActiveTask(entryId);
   await kv.atomic()
@@ -64,7 +71,7 @@ async function deleteTask(taskId: string) {
   }
 }
 
-async function updateName(entryId: string, name: string) {
+async function updateTaskName(entryId: string, name: string) {
   await kv.set(["entries", entryId, "name"], name);
 }
 
