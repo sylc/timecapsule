@@ -13,27 +13,27 @@
   import { formatDay, formatDuration } from "./utils";
   import Duration from "./Duration.svelte";
   import EditableDiv from "./EditableDiv.svelte";
-  let status = $state({ started: 0, taskId: "", taskName: "" });
+  import type { Timer } from "../types";
+
+  let status = $state<Timer>({ id: "", name: "", start: "", stop: "" });
+
   let formatted = $derived(
-    format(new Date(status.started), "dd/MM HH:MM aa"),
+    format(new Date(status.start), "dd/MM hh:MM aa"),
   );
 
-  interface Task {
-    id: string;
-    name: string;
-    start: string;
-    stop: string;
-  }
-
-  let listOfTasks: Task[] = $state([]);
+  let listOfTimers: Timer[] = $state([]);
 
   onMount(async () => {
-    listOfTasks = JSON.parse(await webui.tasks());
+    const activeTask = JSON.parse(await webui.getActiveTimer());
+    if (activeTask) {
+      status = activeTask;
+    }
+    listOfTimers = JSON.parse(await webui.timers());
   });
 
   let tasksByDay = $derived.by(() => {
-    const res: Record<string, Task[]> = {};
-    for (const task of listOfTasks) {
+    const res: Record<string, Timer[]> = {};
+    for (const task of listOfTimers) {
       // get day
       const day = format(new Date(task.start), "yyyy/MM/dd");
       if (!res[day]) res[day] = [];
@@ -45,7 +45,7 @@
       .map((dt) => {
         return {
           day: dt[0],
-          tasks: (dt[1] as Task[]).sort((a, b) =>
+          tasks: (dt[1] as Timer[]).sort((a, b) =>
             b.start.localeCompare(a.start)
           ),
         };
@@ -80,29 +80,29 @@
   });
 
   const onToggleStart = async (forceState?: "start" | "stop") => {
-    if (status.started === 0) {
+    if (status.start === "") {
       // start a new task
       const taskId = ulid();
-      status.started = Date.now();
-      status.taskId = taskId;
+      status.start = new Date().toISOString();
+      status.id = taskId;
 
-      await webui.startNewTask(taskId, status.taskName);
+      await webui.startActiveTimer(taskId, status.name);
     } else {
-      if (forceState === "start") return; // becuase forceState, not stopping
-      await webui.stopTask(status.taskId);
-      status = { started: 0, taskId: "", taskName: "" };
-      listOfTasks = JSON.parse(await webui.tasks());
+      if (forceState === "start") return; // because forceState, not stopping
+      await webui.stopActiveTimer();
+      status = { start: "", id: "", name: "", stop: "" };
+      listOfTimers = JSON.parse(await webui.timers());
     }
   };
 
-  const onDeleteTask = async (taskId: string) => {
-    await webui.deleteTask(taskId);
-    listOfTasks = JSON.parse(await webui.tasks());
+  const onDeleteTimer = async (taskId: string) => {
+    await webui.deleteTimer(taskId);
+    listOfTimers = JSON.parse(await webui.timers());
   };
 
-  const updateTaskName = async (taskId: string, newValue: string) => {
-    await webui.updateTaskName(taskId, newValue);
-    listOfTasks = JSON.parse(await webui.tasks());
+  const updateTimerName = async (taskId: string, newValue: string) => {
+    await webui.updateTimerName(taskId, newValue);
+    listOfTimers = JSON.parse(await webui.timers());
   };
 </script>
 
@@ -112,7 +112,7 @@
   <div class="flex space-x-2">
     <Input
       size="sm"
-      bind:value={status.taskName}
+      bind:value={status.name}
       onKeydown={(e) => {
         if (e.key === "Enter") {
           onToggleStart("start");
@@ -120,12 +120,12 @@
       }}
       placeholder="What are you working on?"
     />
-    <TimerDisplay start={status.started} />
+    <TimerDisplay start={status.start} />
     <Button
       onclick={() => onToggleStart()}
-      color={status.started === 0 ? "green" : "red"}
+      color={status.start === "" ? "green" : "red"}
     >
-      {#if status.started === 0}
+      {#if status.start === ""}
         <PlayOutline />
       {:else}
         <StopOutline />
@@ -135,13 +135,13 @@
 
   <div class="flex py-2 justify-between items-center">
     <div class="w-34 bg-yellow-100">
-      {#if status.started !== 0}
+      {#if status.start !== ""}
         {formatted}
       {/if}
     </div>
     <div class="flex gap-x-2 text-slate-700">
       <div class="flex">
-        Today:&nbsp;<Duration duration={todayTotal} type="hourFractions" />
+        Today:&nbsp;<Duration duration={todayTotal} type="hourFractions" />h
       </div>
       <div class="text-xs" style="line-height: 2; color: gray">
         &#x1f534;&#xfe0e;
@@ -150,7 +150,7 @@
         This Week:&nbsp;<Duration
           duration={thisWeekTotal}
           type="hourFractions"
-        />
+        />h
       </div>
     </div>
   </div>
@@ -169,7 +169,7 @@
                 <EditableDiv
                   text={taskForDay.name}
                   onSubmit={(newValue) =>
-                  updateTaskName(taskForDay.id, newValue)}
+                  updateTimerName(taskForDay.id, newValue)}
                   withPencil="hover"
                 />
                 <div>
@@ -183,7 +183,7 @@
             </div>
             <div>
               <Button
-                onclick={() => onDeleteTask(taskForDay.id)}
+                onclick={() => onDeleteTimer(taskForDay.id)}
                 size="xs"
                 class="flex-end"
               >

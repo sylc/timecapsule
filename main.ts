@@ -1,4 +1,5 @@
 import { WebUI } from "jsr:@webui/deno-webui";
+import type { Timer } from "./client/src/types.ts";
 
 const webui = new WebUI();
 WebUI.setFolderMonitor(true);
@@ -8,79 +9,80 @@ Deno.mkdirSync("./.tak", { recursive: true });
 const kv = await Deno.openKv("./.tak/db");
 
 // tasks
-webui.bind("startNewTask", async (e: WebUI.Event) => {
+webui.bind("startActiveTimer", async (e: WebUI.Event) => {
   console.log(e.arg.string(0), e.arg.string(1));
-  await startNewTask(e.arg.string(0), e.arg.string(1));
+  await startActiveTimer(e.arg.string(0), e.arg.string(1));
 });
 
-webui.bind("stopTask", async (e: WebUI.Event) => {
-  console.log(e.arg.string(0));
-  return JSON.stringify(await stop(e.arg.string(0)));
+webui.bind("stopActiveTimer", async () => {
+  return JSON.stringify(await stopActive());
 });
 
-webui.bind("tasks", async (_e: WebUI.Event) => {
-  return JSON.stringify(await tasks());
+webui.bind("timers", async (_e: WebUI.Event) => {
+  return JSON.stringify(await timers());
 });
 
-webui.bind("deleteTask", async (e: WebUI.Event) => {
+webui.bind("deleteTimer", async (e: WebUI.Event) => {
   const taskId = e.arg.string(0);
   console.log("deleting", taskId);
-  await deleteTask(taskId);
-  return JSON.stringify(await tasks());
+  await deleteTimer(taskId);
+  return JSON.stringify(await timers());
 });
 
-webui.bind("updateTaskName", async (e: WebUI.Event) => {
+webui.bind("updateTimerName", async (e: WebUI.Event) => {
   const taskId = e.arg.string(0);
   const newName = e.arg.string(1);
-  console.log("update taskName", taskId, newName);
-  await updateTaskName(taskId, newName);
+  console.log("update timer Name", taskId, newName);
+  await updateTimerName(taskId, newName);
 });
 
-async function startNewTask(entryId: string, taskName: string) {
-  await setActiveTask(entryId);
+webui.bind("getActiveTimer", async (_e: WebUI.Event) => {
+  return JSON.stringify(await getActiveTimer());
+});
+
+async function startActiveTimer(entryId: string, taskName: string) {
+  await kv.set(["activeTimer"], {
+    id: entryId,
+    start: (new Date()).toISOString(),
+    name: taskName,
+    stop: "",
+  });
+}
+
+async function stopActive() {
+  const activeTimer = (await kv.get<Timer>(["activeTimer"])).value;
+  if (!activeTimer) return;
   await kv.atomic()
-    .set(["entries", entryId, "start"], (new Date()).toISOString())
-    .set(["entries", entryId, "name"], taskName)
-    .commit();
+    .set(["activeTimer"], null)
+    .set(["timers", activeTimer.id], {
+      ...activeTimer,
+      stop: (new Date()).toISOString(),
+    }).commit();
 }
 
-async function stop(entryId: string) {
-  await clearActiveTask();
-  await kv.set(["entries", entryId, "stop"], (new Date()).toISOString());
-}
-
-async function tasks() {
-  const entries = await Array.fromAsync(kv.list({ prefix: ["entries"] }));
-  const tasks: Record<string, any> = {};
+async function timers() {
+  const entries = await Array.fromAsync(kv.list<Timer>({ prefix: ["timers"] }));
+  const timers: Timer[] = [];
   for (const entry of entries) {
-    const key = entry.key[1].toString();
-    const action = entry.key[2].toString();
-    if (!tasks[key]) tasks[key] = { id: key, name: "", start: "", stop: "" };
-    tasks[key][action] = entry.value;
+    timers.push(entry.value!);
   }
-
-  return Object.values(tasks);
+  return timers;
 }
 
-async function deleteTask(taskId: string) {
-  const entries = await Array.fromAsync(
-    kv.list({ prefix: ["entries", taskId] }),
-  );
-  for (const entry of entries) {
-    await kv.delete(entry.key);
-  }
+async function deleteTimer(taskId: string) {
+  await kv.delete(["timers", taskId]);
 }
 
-async function updateTaskName(entryId: string, name: string) {
-  await kv.set(["entries", entryId, "name"], name);
+async function updateTimerName(entryId: string, name: string) {
+  // get timer
+  const timer = (await kv.get<Timer>(["timers", entryId])).value!;
+  await kv.set(["timers", entryId], { ...timer, name });
 }
 
 ////
-async function setActiveTask(entryId: string) {
-  await kv.set(["active"], entryId);
-}
-async function clearActiveTask() {
-  await kv.set(["active"], null);
+async function getActiveTimer() {
+  const activeTask = (await kv.get<string>(["activeTimer"])).value;
+  return activeTask;
 }
 
 /////////////////// Projects

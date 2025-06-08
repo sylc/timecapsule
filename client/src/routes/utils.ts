@@ -2,7 +2,7 @@ import { format } from "date-fns";
 
 export const formatDay = (dateString: string) => {
   try {
-    return format(new Date(dateString), "HH:mm aa");
+    return format(new Date(dateString), "hh:mm aa");
   } catch (e) {
     console.log(dateString, e);
   }
