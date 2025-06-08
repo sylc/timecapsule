@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { Button, Input } from "flowbite-svelte";
+  import { Button, Input, Timepicker } from "flowbite-svelte";
   import {
     PlayOutline,
     StopOutline,
     TrashBinOutline,
   } from "flowbite-svelte-icons";
 
-  import { format, isThisWeek, isToday } from "date-fns";
+  import { format, isThisWeek, isToday, parse } from "date-fns";
   import { ulid } from "@std/ulid";
   import TimerDisplay from "./TimerDisplay.svelte";
   import { onMount } from "svelte";
@@ -18,8 +18,16 @@
   let status = $state<Timer>({ id: "", name: "", start: "", stop: "" });
 
   let formatted = $derived(
-    format(new Date(status.start), "dd/MM hh:MM aa"),
+    format(new Date(status.start), "dd/MM"),
   );
+
+  const onActiveTimerTimeChange = (data?: { time: string }) => {
+    console.log(data);
+    if (data) {
+      status.start = (parse(data.time, "HH:mm", new Date(status.start)))
+        .toISOString();
+    }
+  };
 
   let listOfTimers: Timer[] = $state([]);
 
@@ -107,8 +115,6 @@
 </script>
 
 <div class="p-2 w-full">
-  <h1 class="text-slate-700">Timer</h1>
-
   <div class="flex space-x-2">
     <Input
       size="sm"
@@ -134,9 +140,16 @@
   </div>
 
   <div class="flex py-2 justify-between items-center">
-    <div class="w-34 bg-yellow-100">
+    <div class="bg-yellow-100 flex gap-2">
       {#if status.start !== ""}
-        {formatted}
+        <div>
+          {format(new Date(status.start), "dd/MM")}
+        </div>
+        <Timepicker
+          value={format(new Date(status.start), "HH:mm")}
+          onselect={onActiveTimerTimeChange}
+          size="sm"
+        />
       {/if}
     </div>
     <div class="flex gap-x-2 text-slate-700">
