@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Input, Timepicker } from "flowbite-svelte";
+  import { Button, Input, Select, Timepicker } from "flowbite-svelte";
   import {
     PlayOutline,
     StopOutline,
@@ -14,6 +14,7 @@
   import Duration from "./Duration.svelte";
   import EditableDiv from "./EditableDiv.svelte";
   import type { Timer } from "../types";
+  import { projects } from "./states.svelte";
 
   let status = $state<Timer>({ id: "", name: "", start: "", stop: "" });
 
@@ -37,6 +38,7 @@
       status = activeTask;
     }
     listOfTimers = JSON.parse(await webui.timers());
+    projects.projects = JSON.parse(await webui.projects());
   });
 
   let tasksByDay = $derived.by(() => {
@@ -112,6 +114,13 @@
     await webui.updateTimerName(taskId, newValue);
     listOfTimers = JSON.parse(await webui.timers());
   };
+
+  const onProjectChange = async (e: Event, timerId: string) => {
+    const value = (e.target as HTMLSelectElement).value;
+    console.log(value);
+    if (typeof value !== "string") return;
+    await webui.setProject(timerId, value);
+  };
 </script>
 
 <div class="p-2 w-full">
@@ -178,6 +187,17 @@
         {#each tDay.tasks as taskForDay}
           <div class="flex gap-x-2 justify-between border-t-1 border-slate-300 py-1">
             <div class="flex grow-1">
+              <div class="w-34">
+                <Select
+                  class="mt-2"
+                  items={projects.projects.map((p) => ({
+                    value: p.id,
+                    name: p.name,
+                  }))}
+                  value={taskForDay.projectId || ""}
+                  onchange={(e) => onProjectChange(e, taskForDay.id)}
+                />
+              </div>
               <div class="grow-1">
                 <EditableDiv
                   text={taskForDay.name}

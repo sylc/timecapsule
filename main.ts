@@ -24,9 +24,15 @@ webui.bind("timers", async (_e: WebUI.Event) => {
 });
 
 webui.bind("deleteTimer", async (e: WebUI.Event) => {
-  const taskId = e.arg.string(0);
-  console.log("deleting", taskId);
-  await kv.delete(["timers", taskId]);
+  const timerId = e.arg.string(0);
+  console.log("deleting", timerId);
+
+  const timer = (await kv.get<Timer>(["timers", timerId])).value!;
+  if (timer.projectId) {
+    console.log("removing from project", timer.projectId);
+    await kv.delete(["projects", timer.projectId, "timers", timer.id]);
+  }
+  await kv.delete(["timers", timerId]);
   return JSON.stringify(await timers());
 });
 
@@ -113,7 +119,7 @@ webui.bind("projects", async (_e: WebUI.Event) => {
   );
   const projects: Project[] = [];
   for (const entry of entries) {
-    if (entry.key.length > 1) continue; // keys like [projects, "abc", timers, "abe"] will be skipped.
+    if (entry.key.length > 2) continue; // keys like [projects, "abc", timers, "abe"] will be skipped.
     projects.push(entry.value!);
   }
   return JSON.stringify(projects);
