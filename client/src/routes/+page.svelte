@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button, Input, Select, Timepicker } from "flowbite-svelte";
   import {
+    FolderOutline,
     PlayOutline,
     StopOutline,
     TrashBinOutline,
@@ -135,8 +136,8 @@
   };
 </script>
 
-<div class="p-2 w-full">
-  <div class="flex space-x-2">
+<div class="">
+  <div class="p-2 flex space-x-2">
     <Input
       size="sm"
       bind:value={status.name}
@@ -160,7 +161,7 @@
     </Button>
   </div>
 
-  <div class="flex py-2 justify-between items-center">
+  <div class="flex p-2 justify-between items-center">
     <div class="bg-yellow-100 flex gap-2">
       {#if status.start !== ""}
         <div>
@@ -192,55 +193,67 @@
     <div></div>
     <hr />
     {#each tasksByDay as tDay}
-      <div class="font-semibold text-slate-700 text-sm">
-        {format(new Date(tDay.day), "dd-MMM")}
-      </div>
-      <div class="flex flex-col gap-y-1">
-        {#each tDay.tasks as taskForDay}
-          <div class="flex gap-x-2 justify-between border-t-1 border-slate-300 py-1">
-            <div class="flex grow-1">
-              <div class="w-34">
-                <Select
-                  class="mt-2"
-                  items={projects.projects.map((p) => ({
-                    value: p.id,
-                    name: p.name,
-                  }))}
-                  value={taskForDay.projectId || ""}
-                  onchange={(e) => onProjectChange(e, taskForDay.id)}
-                />
+      <div class="bg-white my-2 px-2">
+        <div class="font-semibold text-slate-700 text-lg">
+          {format(new Date(tDay.day), "dd-MMM")}
+        </div>
+        <div class="flex flex-col gap-y-1">
+          {#each tDay.tasks as taskForDay}
+            <div class="flex-col gap-x-2 justify-between border-t-1 border-slate-300 py-1">
+              <!-- Row 1 -->
+              <div class="flex justify-between">
+                <div class="flex grow-1">
+                  <div class="grow-1">
+                    <EditableDiv
+                      text={taskForDay.name}
+                      onSubmit={(newValue) =>
+                      updateTimerName(taskForDay.id, newValue)}
+                      withPencil="hover"
+                    />
+                  </div>
+                  <EditableDuration
+                    id={taskForDay.id}
+                    start={taskForDay.start}
+                    stop={taskForDay.stop}
+                    onSubmit={(start, stop) =>
+                    onEditTimeRange(taskForDay.id, start, stop)}
+                  />
+                </div>
+                <div>
+                  <Button
+                    onclick={() => onDeleteTimer(taskForDay.id)}
+                    size="xs"
+                    class="flex-end"
+                  >
+                    <TrashBinOutline size="xs" />
+                  </Button>
+                </div>
               </div>
-              <div class="grow-1">
-                <EditableDiv
-                  text={taskForDay.name}
-                  onSubmit={(newValue) =>
-                  updateTimerName(taskForDay.id, newValue)}
-                  withPencil="hover"
-                />
+              <!-- Row 2 -->
+              <div class="flex justify-between">
+                <div class="min-w-46 flex align-middle items-baseline">
+                  <!-- <FolderOutline /> -->
+                  <Select
+                    size="sm"
+                    class="grow-1"
+                    items={projects.projects.map((p) => ({
+                      value: p.id,
+                      name: p.name,
+                    }))}
+                    value={taskForDay.projectId || ""}
+                    onchange={(e) => onProjectChange(e, taskForDay.id)}
+                    underline
+                    placeholder="Project"
+                  />
+                </div>
                 <div>
                   {formatDay(taskForDay.start)}
                   - {formatDay(taskForDay.stop)}
                 </div>
               </div>
-              <EditableDuration
-                id={taskForDay.id}
-                start={taskForDay.start}
-                stop={taskForDay.stop}
-                onSubmit={(start, stop) =>
-                onEditTimeRange(taskForDay.id, start, stop)}
-              />
             </div>
-            <div>
-              <Button
-                onclick={() => onDeleteTimer(taskForDay.id)}
-                size="xs"
-                class="flex-end"
-              >
-                <TrashBinOutline size="xs" />
-              </Button>
-            </div>
-          </div>
-        {/each}
+          {/each}
+        </div>
       </div>
     {/each}
   </div>

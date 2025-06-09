@@ -38,7 +38,6 @@
   }
 
   function onClose(e: ToggleEvent) {
-    console.log(e);
     if (e.newState === "closed") {
       onSubmit(
         selectedTimeRangeFullDate.time,
