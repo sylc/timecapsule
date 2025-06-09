@@ -9,7 +9,7 @@ webui.setRootFolder("./client/build");
 Deno.mkdirSync("./.tak", { recursive: true });
 const kv = await Deno.openKv("./.tak/db");
 
-// timers
+// Active timer
 webui.bind("startActiveTimer", async (e: WebUI.Event) => {
   console.log(e.arg.string(0), e.arg.string(1));
   await startActiveTimer(e.arg.string(0), e.arg.string(1));
@@ -19,6 +19,41 @@ webui.bind("stopActiveTimer", async () => {
   return JSON.stringify(await stopActive());
 });
 
+webui.bind("updateActiveTimerStart", async (e: WebUI.Event) => {
+  const start = e.arg.string(0);
+  console.log("update active timer start", start);
+
+  const timer = (await kv.get<Timer>(["activeTimer"])).value!;
+  await kv.set(["activeTimer"], { ...timer, start });
+});
+
+webui.bind("getActiveTimer", async (_e: WebUI.Event) => {
+  const activeTask = (await kv.get<string>(["activeTimer"])).value;
+  return JSON.stringify(activeTask);
+});
+
+async function startActiveTimer(entryId: string, taskName: string) {
+  await kv.set(["activeTimer"], {
+    id: entryId,
+    start: (new Date()).toISOString(),
+    name: taskName,
+    stop: "",
+  });
+}
+
+async function stopActive() {
+  const activeTimer = (await kv.get<Timer>(["activeTimer"])).value;
+  if (!activeTimer) return;
+  await kv.atomic()
+    .set(["activeTimer"], null)
+    .set(["timers", activeTimer.id], {
+      ...activeTimer,
+      stop: (new Date()).toISOString(),
+    }).commit();
+}
+
+////////////////////////////////////////////////////
+// Generic timers
 webui.bind("timers", async (_e: WebUI.Event) => {
   return JSON.stringify(await timers());
 });
@@ -45,8 +80,16 @@ webui.bind("updateTimerName", async (e: WebUI.Event) => {
   await kv.set(["timers", timerId], { ...timer, name });
 });
 
-webui.bind("getActiveTimer", async (_e: WebUI.Event) => {
-  return JSON.stringify(await getActiveTimer());
+webui.bind("setTimerRange", async (e: WebUI.Event) => {
+  const timerId = e.arg.string(0);
+  const start = e.arg.string(1);
+  const stop = e.arg.string(2);
+  console.log("set timer range", timerId, start, stop);
+
+  const timer = (await kv.get<Timer>(["timers", timerId])).value!;
+  await kv.atomic()
+    .set(["timers", timerId], { ...timer, start, stop })
+    .commit();
 });
 
 webui.bind("setProject", async (e: WebUI.Event) => {
@@ -63,26 +106,6 @@ webui.bind("setProject", async (e: WebUI.Event) => {
     .commit();
 });
 
-async function startActiveTimer(entryId: string, taskName: string) {
-  await kv.set(["activeTimer"], {
-    id: entryId,
-    start: (new Date()).toISOString(),
-    name: taskName,
-    stop: "",
-  });
-}
-
-async function stopActive() {
-  const activeTimer = (await kv.get<Timer>(["activeTimer"])).value;
-  if (!activeTimer) return;
-  await kv.atomic()
-    .set(["activeTimer"], null)
-    .set(["timers", activeTimer.id], {
-      ...activeTimer,
-      stop: (new Date()).toISOString(),
-    }).commit();
-}
-
 async function timers() {
   const entries = await Array.fromAsync(kv.list<Timer>({ prefix: ["timers"] }));
   const timers: Timer[] = [];
@@ -90,12 +113,6 @@ async function timers() {
     timers.push(entry.value!);
   }
   return timers;
-}
-
-////
-async function getActiveTimer() {
-  const activeTask = (await kv.get<string>(["activeTimer"])).value;
-  return activeTask;
 }
 
 /////////////////// Projects
@@ -125,10 +142,13 @@ webui.bind("projects", async (_e: WebUI.Event) => {
   return JSON.stringify(projects);
 });
 
-// reports
-
+//// TBD reports
 // GetWeeklyReport
+//
 // per week, per projects
+//
+
+//////
 
 webui.setPort(8081);
 

@@ -6,7 +6,7 @@
     TrashBinOutline,
   } from "flowbite-svelte-icons";
 
-  import { format, isThisWeek, isToday, parse } from "date-fns";
+  import { format, isThisWeek, isToday, parse, startOfDay } from "date-fns";
   import { ulid } from "@std/ulid";
   import TimerDisplay from "./TimerDisplay.svelte";
   import { onMount } from "svelte";
@@ -15,6 +15,7 @@
   import EditableDiv from "./EditableDiv.svelte";
   import type { Timer } from "../types";
   import { projects } from "./states.svelte";
+  import EditableDuration from "./EditableDuration.svelte";
 
   let status = $state<Timer>({ id: "", name: "", start: "", stop: "" });
 
@@ -22,11 +23,13 @@
     format(new Date(status.start), "dd/MM"),
   );
 
-  const onActiveTimerTimeChange = (data?: { time: string }) => {
+  const onActiveTimerTimeChange = async (data?: { time: string }) => {
     console.log(data);
     if (data) {
-      status.start = (parse(data.time, "HH:mm", new Date(status.start)))
+      const start = (parse(data.time, "HH:mm", new Date(status.start)))
         .toISOString();
+      status.start = start;
+      await webui.updateActiveTimerStart(start);
     }
   };
 
@@ -50,7 +53,7 @@
       res[day].push(task);
     }
     return Object.entries(res)
-      .sort((a, b) => a[0].localeCompare(b[0]))
+      .sort((a, b) => b[0].localeCompare(a[0]))
       // sort task in each days
       .map((dt) => {
         return {
@@ -120,6 +123,15 @@
     console.log(value);
     if (typeof value !== "string") return;
     await webui.setProject(timerId, value);
+  };
+
+  const onEditTimeRange = async (
+    timerId: string,
+    start: string,
+    stop: string,
+  ) => {
+    await webui.setTimerRange(timerId, start, stop);
+    listOfTimers = JSON.parse(await webui.timers());
   };
 </script>
 
@@ -210,9 +222,13 @@
                   - {formatDay(taskForDay.stop)}
                 </div>
               </div>
-              <Duration
-                duration={formatDuration(taskForDay.start, taskForDay.stop)}
-              ></Duration>
+              <EditableDuration
+                id={taskForDay.id}
+                start={taskForDay.start}
+                stop={taskForDay.stop}
+                onSubmit={(start, stop) =>
+                onEditTimeRange(taskForDay.id, start, stop)}
+              />
             </div>
             <div>
               <Button
