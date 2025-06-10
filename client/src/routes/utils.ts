@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, getWeek, getYear } from "date-fns";
 
 export const formatDay = (dateString: string) => {
   try {
@@ -20,4 +20,15 @@ export const formatDuration = (
   const hours = Math.floor(duration / (1000 * 60 * 60));
 
   return { hours, minutes, seconds };
+};
+
+export const msToHours = (ms: number) => {
+  return (ms / (1000 * 60 * 60)).toFixed(2);
+};
+
+export const getWeekKey = () => {
+  const today = new Date();
+  const week = getWeek(today, { weekStartsOn: 1 });
+  const year = getYear(today);
+  return `${year}_${week}`;
 };

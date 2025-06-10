@@ -6,6 +6,7 @@
     "jsr:@std/ulid@*": "1.0.0",
     "jsr:@webui/deno-webui@*": "2.5.8",
     "jsr:@zip-js/zip-js@2.7.60": "2.7.60",
+    "npm:date-fns@*": "4.1.0",
     "npm:sv@*": "0.8.7"
   },
   "jsr": {
@@ -31,6 +32,9 @@
     }
   },
   "npm": {
+    "date-fns@4.1.0": {
+      "integrity": "sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg=="
+    },
     "sv@0.8.7": {
       "integrity": "sha512-8HIuAuQWk/4xyFrEkNhkR7WSQ63qYs9WnF7rVvALIIQjnY25VDrPx6eWa7yR5eFL4NXXFFN6+jPJdbW50xSCvg==",
       "bin": true

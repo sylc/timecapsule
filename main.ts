@@ -1,6 +1,17 @@
 import { WebUI } from "jsr:@webui/deno-webui";
 import { ulid } from "jsr:@std/ulid";
-import type { Project, Timer } from "./client/src/types.ts";
+import { getDay, getWeek, getYear } from "npm:date-fns";
+import type {
+  Project,
+  Timer,
+  WeeklyByProjectReport,
+} from "./client/src/types.ts";
+import { upgrade } from "./upgrade.ts";
+
+export const index_timers_by_start_date = "timers_by_start_date";
+export const compositeKeyStart = (timer: { start: string; id: string }) => {
+  return `${timer.start}__${timer.id}`;
+};
 
 const webui = new WebUI();
 WebUI.setFolderMonitor(true);
@@ -8,6 +19,7 @@ webui.setRootFolder("./client/build");
 
 Deno.mkdirSync("./.tak", { recursive: true });
 const kv = await Deno.openKv("./.tak/db");
+await upgrade(kv);
 
 // Active timer
 webui.bind("startActiveTimer", async (e: WebUI.Event) => {
@@ -33,14 +45,18 @@ webui.bind("getActiveTimer", async (_e: WebUI.Event) => {
 });
 
 async function startActiveTimer(entryId: string, taskName: string) {
-  await kv.set(["activeTimer"], {
-    id: entryId,
-    start: (new Date()).toISOString(),
-    name: taskName,
-    stop: "",
-  });
+  await kv.atomic()
+    .set(["activeTimer"], {
+      id: entryId,
+      start: (new Date()).toISOString(),
+      name: taskName,
+      stop: "",
+    })
+    .commit();
 }
 
+// when the active timer is stopped, it is copied over to
+// the timers index
 async function stopActive() {
   const activeTimer = (await kv.get<Timer>(["activeTimer"])).value;
   if (!activeTimer) return;
@@ -49,7 +65,14 @@ async function stopActive() {
     .set(["timers", activeTimer.id], {
       ...activeTimer,
       stop: (new Date()).toISOString(),
-    }).commit();
+    })
+    .set(
+      [
+        index_timers_by_start_date,
+        compositeKeyStart({ start: activeTimer.start, id: activeTimer.id }),
+      ],
+      activeTimer.id,
+    ).commit();
 }
 
 ////////////////////////////////////////////////////
@@ -67,7 +90,14 @@ webui.bind("deleteTimer", async (e: WebUI.Event) => {
     console.log("removing from project", timer.projectId);
     await kv.delete(["projects", timer.projectId, "timers", timer.id]);
   }
-  await kv.delete(["timers", timerId]);
+  await kv.atomic()
+    .delete(["timers", timerId])
+    .delete(
+      [
+        index_timers_by_start_date,
+        compositeKeyStart(timer),
+      ],
+    ).commit();
   return JSON.stringify(await timers());
 });
 
@@ -87,9 +117,21 @@ webui.bind("setTimerRange", async (e: WebUI.Event) => {
   console.log("set timer range", timerId, start, stop);
 
   const timer = (await kv.get<Timer>(["timers", timerId])).value!;
+  const timerUpdated = { ...timer, start, stop };
   await kv.atomic()
-    .set(["timers", timerId], { ...timer, start, stop })
+    .set(["timers", timerId], timerUpdated)
     .commit();
+
+  // updating index
+  if (timer.start !== start) {
+    await kv.atomic()
+      .delete([index_timers_by_start_date, compositeKeyStart(timer)])
+      .set(
+        [index_timers_by_start_date, compositeKeyStart(timerUpdated)],
+        timerId,
+      )
+      .commit();
+  }
 });
 
 webui.bind("setProject", async (e: WebUI.Event) => {
@@ -106,11 +148,28 @@ webui.bind("setProject", async (e: WebUI.Event) => {
     .commit();
 });
 
-async function timers() {
-  const entries = await Array.fromAsync(kv.list<Timer>({ prefix: ["timers"] }));
+// limited to the last 500.
+// todo this is not great. we should have an index by start time;
+async function timers(opts?: { weekKey: string }) {
+  let prefix = [index_timers_by_start_date];
+
+  if (opts?.weekKey) {
+    // get the startDate of the week.
+
+    // get the endDate of teh week
+    prefix = [index_timers_by_start_date];
+  }
+
+  const timerIds = await Array.fromAsync(
+    kv.list<string>({ prefix }, { limit: 500, reverse: true }),
+  );
+
+  const entries = await kv.getMany<Timer[]>(
+    timerIds.map((id) => ["timers", id.value]),
+  );
   const timers: Timer[] = [];
   for (const entry of entries) {
-    timers.push(entry.value!);
+    entry.value && timers.push(entry.value);
   }
   return timers;
 }
@@ -143,10 +202,55 @@ webui.bind("projects", async (_e: WebUI.Event) => {
 });
 
 //// TBD reports
-// GetWeeklyReport
-//
-// per week, per projects
-//
+webui.bind("getByWeeklyAndProjects", async (e: WebUI.Event) => {
+  const weekKey = e.arg.string(0);
+  return JSON.stringify(await getByWeeklyAndProjects(weekKey));
+});
+
+async function getByWeeklyAndProjects(weekKey: string) {
+  // found timers for last week. then separate by projects then accumulate by day
+  const timersList = await timers();
+  const accumulated: Record<
+    string,
+    Record<
+      string,
+      WeeklyByProjectReport
+    >
+  > = {}; // shape is { weekKey: { projectKey : { projectKey, durationTotal, tasks: [], durationDays: [ day1, day2, day2, day4, day5, day5, day7 ] } } }
+  for (const timer of timersList) {
+    const startDate = new Date(timer.start);
+    const stopDate = new Date(timer.stop);
+    //calculate duration
+    const duration = stopDate.valueOf() - startDate.valueOf();
+    const week = getWeek(startDate, { weekStartsOn: 1 });
+    const year = getYear(startDate);
+    const weekKey = `${year}_${week}`;
+    if (!accumulated[weekKey]) accumulated[weekKey] = {};
+    const projectKey = timer.projectId || "NO_PROJECT";
+    if (!accumulated[weekKey][projectKey]) {
+      accumulated[weekKey][projectKey] = {
+        projectKey,
+        msTotal: 0,
+        timers: [],
+        byDays: [0, 0, 0, 0, 0, 0, 0],
+      };
+    }
+    accumulated[weekKey][projectKey].msTotal += duration;
+    accumulated[weekKey][projectKey].timers.push(timer);
+    // get the Day of the week
+    const dayOfWeek = getDay(startDate) || 7; // sunday is zero, so becomes 7
+    accumulated[weekKey][projectKey].byDays[dayOfWeek] += duration;
+  }
+
+  const res: Record<
+    string,
+    WeeklyByProjectReport[]
+  > = {};
+  for (const weekKey in accumulated) {
+    res[weekKey] = Object.values(accumulated[weekKey]);
+  }
+  return res;
+}
 
 //////
 

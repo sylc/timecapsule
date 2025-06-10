@@ -10,3 +10,18 @@ export interface Project {
   id: string;
   name: string;
 }
+
+export interface WeeklyByProjectReport {
+  projectKey: string;
+  msTotal: number;
+  timers: Timer[];
+  byDays: [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ];
+}
