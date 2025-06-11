@@ -7,6 +7,7 @@ import type {
   WeeklyByProjectReport,
 } from "./client/src/types.ts";
 import { upgrade } from "./upgrade.ts";
+import { sliceIntoBatches } from "./utils.ts";
 
 export const index_timers_by_start_date = "timers_by_start_date";
 export const compositeKeyStart = (timer: { start: string; id: string }) => {
@@ -164,13 +165,21 @@ async function timers(opts?: { weekKey: string }) {
     kv.list<string>({ prefix }, { limit: 500, reverse: true }),
   );
 
-  const entries = await kv.getMany<Timer[]>(
-    timerIds.map((id) => ["timers", id.value]),
-  );
+  const timersBatches = sliceIntoBatches(timerIds, 8);
+  let entries: Deno.KvEntryMaybe<Timer>[] = [];
+  for (const batch of timersBatches) {
+    entries = entries.concat(
+      await kv.getMany<Timer[]>(
+        batch.map((id) => ["timers", id.value]),
+      ),
+    );
+  }
+
   const timers: Timer[] = [];
   for (const entry of entries) {
     entry.value && timers.push(entry.value);
   }
+  console.log(timerIds.length, timers.length);
   return timers;
 }
 
