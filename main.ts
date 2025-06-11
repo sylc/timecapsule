@@ -6,7 +6,7 @@ import type {
   Timer,
   WeeklyByProjectReport,
 } from "./client/src/types.ts";
-import { upgrade } from "./upgrade.ts";
+// import { upgrade } from "./upgrade.ts";
 import { sliceIntoBatches } from "./utils.ts";
 
 export const index_timers_by_start_date = "timers_by_start_date";
@@ -20,7 +20,7 @@ webui.setRootFolder("./client/build");
 
 Deno.mkdirSync("./.tak", { recursive: true });
 const kv = await Deno.openKv("./.tak/db");
-await upgrade(kv);
+// await upgrade(kv);
 
 // Active timer
 webui.bind("startActiveTimer", async (e: WebUI.Event) => {
