@@ -1,6 +1,6 @@
 import { WebUI } from "jsr:@webui/deno-webui";
 import { ulid } from "jsr:@std/ulid";
-import { getDay, getWeek, getYear } from "npm:date-fns";
+import { addDays, endOfWeek, getDay, getWeek, getYear } from "npm:date-fns";
 import type {
   Project,
   Timer,
@@ -151,18 +151,23 @@ webui.bind("setProject", async (e: WebUI.Event) => {
 
 // limited to the last 500.
 // todo this is not great. we should have an index by start time;
-async function timers(opts?: { weekKey: string }) {
-  let prefix = [index_timers_by_start_date];
+async function timers(opts?: { startOfWeekDay: string }) {
+  const start = [
+    index_timers_by_start_date,
+    (addDays(new Date(), -21)).toISOString(),
+  ];
+  const end = [index_timers_by_start_date, "5000"];
 
-  if (opts?.weekKey) {
+  if (opts?.startOfWeekDay) {
     // get the startDate of the week.
-
+    start[1] = opts?.startOfWeekDay;
     // get the endDate of teh week
-    prefix = [index_timers_by_start_date];
+    end[1] = endOfWeek(new Date(opts?.startOfWeekDay), { weekStartsOn: 1 })
+      .toISOString();
   }
 
   const timerIds = await Array.fromAsync(
-    kv.list<string>({ prefix }, { limit: 500, reverse: true }),
+    kv.list<string>({ start, end }, { reverse: true }),
   );
 
   const timersBatches = sliceIntoBatches(timerIds, 8);
@@ -179,7 +184,6 @@ async function timers(opts?: { weekKey: string }) {
   for (const entry of entries) {
     entry.value && timers.push(entry.value);
   }
-  console.log(timerIds.length, timers.length);
   return timers;
 }
 
@@ -212,13 +216,13 @@ webui.bind("projects", async (_e: WebUI.Event) => {
 
 //// TBD reports
 webui.bind("getByWeeklyAndProjects", async (e: WebUI.Event) => {
-  const weekKey = e.arg.string(0);
-  return JSON.stringify(await getByWeeklyAndProjects(weekKey));
+  const startOfWeek = e.arg.string(0);
+  return JSON.stringify(await getByWeeklyAndProjects(startOfWeek));
 });
 
-async function getByWeeklyAndProjects(weekKey: string) {
+async function getByWeeklyAndProjects(startOfWeek: string) {
   // found timers for last week. then separate by projects then accumulate by day
-  const timersList = await timers();
+  const timersList = await timers({ startOfWeekDay: startOfWeek });
   const accumulated: Record<
     string,
     Record<

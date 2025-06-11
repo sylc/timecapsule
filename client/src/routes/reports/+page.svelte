@@ -1,5 +1,6 @@
 <script lang="ts">
   import {
+    Button,
     Table,
     TableBody,
     TableBodyCell,
@@ -9,19 +10,17 @@
   } from "flowbite-svelte";
   import { onMount } from "svelte";
   import type { WeeklyByProjectReport } from "../../types";
-  import { projects, projectsByKey } from "../states.svelte";
+  import { projectsByKey } from "../states.svelte";
   import { getWeekKey, msToHours } from "../utils";
+  import {
+    ArrowLeftOutline,
+    ArrowRightOutline,
+  } from "flowbite-svelte-icons";
+  import { addDays } from "date-fns";
 
   let weeklyReport: Record<string, WeeklyByProjectReport[]> = $state({});
-  const days = $state({
-    weekKey: getWeekKey(),
-    day1: "Mon",
-    day2: "Tue",
-    day3: "Wed",
-    day4: "thu",
-    day5: "Fri",
-    day6: "Sat",
-    day7: "Sun",
+  let days = $state({
+    ...getWeekKey({ format: "EEE dd/MM" }),
   });
 
   let selectedProjectData = $derived.by(() => {
@@ -33,14 +32,47 @@
   };
 
   onMount(async () => {
-    const currentWeekKey = getWeekKey();
     weeklyReport = JSON.parse(
-      await webui.getByWeeklyAndProjects(currentWeekKey),
+      await webui.getByWeeklyAndProjects(days.day1d.toISOString()),
     );
   });
+
+  const onPreviousWeek = async () => {
+    days = {
+      ...getWeekKey({
+        overrideDate: addDays(days.day1d, -7).toISOString(),
+        format: "EEE dd/MM",
+      }),
+    };
+    weeklyReport = JSON.parse(
+      await webui.getByWeeklyAndProjects(days.day1d.toISOString()),
+    );
+  };
+
+  const onNextWeek = async () => {
+    days = {
+      ...getWeekKey({
+        overrideDate: addDays(days.day1d, 7).toISOString(),
+        format: "EEE dd/MM",
+      }),
+    };
+    weeklyReport = JSON.parse(
+      await webui.getByWeeklyAndProjects(days.day1d.toISOString()),
+    );
+  };
 </script>
 
-<div>Week {getWeekKey().split("_")[1]}</div>
+<div class="flex p-2 align-middle items-center">
+  <Button class="p-2" onclick={onPreviousWeek}><ArrowLeftOutline
+      class="h-6 w-6"
+    /></Button>
+  <div class="px-2">
+    Week {days.weekKey.split("_")[1]}: {days.day1} - {days.day7}
+  </div>
+  <Button class="p-2" onclick={onNextWeek}><ArrowRightOutline
+      class="h-6 w-6"
+    /></Button>
+</div>
 <div>
   <Table>
     <TableHead>
@@ -58,16 +90,23 @@
       {#each selectedProjectData as proj}
         <TableBodyRow>
           <TableBodyCell>{getProjectName(proj.projectKey)}</TableBodyCell>
-          <TableBodyCell>{msToHours(proj.msTotal)}h</TableBodyCell>
-          <TableBodyCell>{msToHours(proj.byDays[0])}h</TableBodyCell>
-          <TableBodyCell>{msToHours(proj.byDays[1])}h</TableBodyCell>
-          <TableBodyCell>{msToHours(proj.byDays[2])}h</TableBodyCell>
-          <TableBodyCell>{msToHours(proj.byDays[3])}h</TableBodyCell>
-          <TableBodyCell>{msToHours(proj.byDays[4])}h</TableBodyCell>
-          <TableBodyCell>{msToHours(proj.byDays[5])}h</TableBodyCell>
-          <TableBodyCell>{msToHours(proj.byDays[6])}h</TableBodyCell>
+
+          {@render row(proj.msTotal)}
+          {@render row(proj.byDays[0])}
+          {@render row(proj.byDays[1])}
+          {@render row(proj.byDays[2])}
+          {@render row(proj.byDays[3])}
+          {@render row(proj.byDays[4])}
+          {@render row(proj.byDays[5])}
+          {@render row(proj.byDays[6])}
         </TableBodyRow>
       {/each}
     </TableBody>
   </Table>
 </div>
+
+{#snippet row(ms: number)}
+  <TableBodyCell class={ms > 0 ? "font-bold text-black" : ""}>{
+      msToHours(ms)
+    }h</TableBodyCell>
+{/snippet}
