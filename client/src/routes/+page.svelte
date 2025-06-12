@@ -78,19 +78,24 @@
     return 0;
   });
   const thisWeekTotal = $derived.by(() => {
-    let total = 0;
+    const res: { total: number; byDay: Record<string, number> } = {
+      total: 0,
+      byDay: {},
+    };
     for (const tDay of tasksByDay) {
       if (isThisWeek(new Date(tDay.day), { weekStartsOn: 1 })) {
-        const dayTotal = tasksByDay[0].tasks.reduce(
+        const dayTotal = tDay.tasks.reduce(
           (acc, cur) =>
             acc +
             (new Date(cur.stop).valueOf() - new Date(cur.start).valueOf()),
           0,
         );
-        total = total + dayTotal;
+        console.log(tDay.day, dayTotal);
+        res.total += dayTotal;
+        res.byDay[tDay.day] = dayTotal;
       }
     }
-    return total;
+    return res;
   });
 
   const onToggleStart = async (forceState?: "start" | "stop") => {
@@ -183,7 +188,7 @@
       </div>
       <div class="flex">
         This Week:&nbsp;<Duration
-          duration={thisWeekTotal}
+          duration={thisWeekTotal.total}
           type="hourFractions"
         />h
       </div>
@@ -194,8 +199,11 @@
     <hr />
     {#each tasksByDay as tDay}
       <div class="bg-white my-2 px-2">
-        <div class="font-semibold text-slate-700 text-lg">
-          {format(new Date(tDay.day), "dd-MMM")}
+        <div class="flex font-semibold text-slate-700 text-lg">
+          {format(new Date(tDay.day), "EEE dd-MMM")} -&nbsp;<Duration
+            duration={thisWeekTotal.byDay[tDay.day]}
+            type="hourFractions"
+          />h
         </div>
         <div class="flex flex-col gap-y-1">
           {#each tDay.tasks as taskForDay}

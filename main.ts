@@ -252,7 +252,7 @@ async function getByWeeklyAndProjects(startOfWeek: string) {
     accumulated[weekKey][projectKey].timers.push(timer);
     // get the Day of the week
     const dayOfWeek = getDay(startDate) || 7; // sunday is zero, so becomes 7
-    accumulated[weekKey][projectKey].byDays[dayOfWeek] += duration;
+    accumulated[weekKey][projectKey].byDays[dayOfWeek - 1] += duration;
   }
 
   const res: Record<
