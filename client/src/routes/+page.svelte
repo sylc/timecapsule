@@ -83,17 +83,17 @@
       byDay: {},
     };
     for (const tDay of tasksByDay) {
+      const dayTotal = tDay.tasks.reduce(
+        (acc, cur) =>
+          acc +
+          (new Date(cur.stop).valueOf() - new Date(cur.start).valueOf()),
+        0,
+      );
       if (isThisWeek(new Date(tDay.day), { weekStartsOn: 1 })) {
-        const dayTotal = tDay.tasks.reduce(
-          (acc, cur) =>
-            acc +
-            (new Date(cur.stop).valueOf() - new Date(cur.start).valueOf()),
-          0,
-        );
         console.log(tDay.day, dayTotal);
         res.total += dayTotal;
-        res.byDay[tDay.day] = dayTotal;
       }
+      res.byDay[tDay.day] = dayTotal;
     }
     return res;
   });
