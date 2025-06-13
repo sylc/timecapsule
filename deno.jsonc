@@ -1,7 +1,7 @@
 {
   "tasks": {
     // Note that the exe do not open when called with git bash
-    "dist": "cd client && deno task build && cd .. && deno compile -A --unstable-kv --no-terminal -o tak --include client/build main.ts",
+    "dist": "cd client && deno task build && cd .. && deno compile -A --unstable-kv --no-terminal -o tak --icon ./favicon_round_small.ico --include client/build main.ts",
     "dev-client": "cd client && deno task dev",
     // we use sleep to make give time to the client to start.
     // sometimes, like with new package version, it take time and the server closes.
