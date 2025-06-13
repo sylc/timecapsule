@@ -5,7 +5,13 @@ working on.
 
 ![alt text](image.png)
 
-To develop: `deno task dev`
+To develop:
+
+```
+npm install --prefix client
+npm run build --prefix client
+deno task dev
+```
 
 To build an executable: `deno task dist`
 
