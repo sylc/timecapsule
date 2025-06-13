@@ -45,16 +45,34 @@ webui.bind("getActiveTimer", async (_e: WebUI.Event) => {
   return JSON.stringify(activeTask);
 });
 
-async function startActiveTimer(entryId: string, taskName: string) {
+async function startActiveTimer(
+  entryId: string,
+  taskName: string,
+  projectId?: string,
+) {
+  const newTimer: Timer = {
+    id: entryId,
+    start: (new Date()).toISOString(),
+    name: taskName,
+    stop: "",
+    projectId,
+  };
   await kv.atomic()
-    .set(["activeTimer"], {
-      id: entryId,
-      start: (new Date()).toISOString(),
-      name: taskName,
-      stop: "",
-    })
+    .set(["activeTimer"], newTimer)
     .commit();
 }
+
+webui.bind("reStartTimer", async (e: WebUI.Event) => {
+  const exisitingTaskId = e.arg.string(0);
+  const timer = (await kv.get<Timer>(["timers", exisitingTaskId])).value;
+  if (!timer) {
+    console.error("timer do not exist!!", timer);
+    return;
+  }
+  // stop any task if there is any active.
+  await stopActive();
+  await startActiveTimer(ulid(), timer.name, timer.projectId);
+});
 
 // when the active timer is stopped, it is copied over to
 // the timers index

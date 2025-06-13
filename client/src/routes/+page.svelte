@@ -139,6 +139,13 @@
     await webui.setTimerRange(timerId, start, stop);
     listOfTimers = JSON.parse(await webui.timers());
   };
+
+  const onRestart = async (timerId: string) => {
+    await webui.reStartTimer(timerId);
+    listOfTimers = JSON.parse(await webui.timers());
+    const activeTask = JSON.parse(await webui.getActiveTimer());
+    status = activeTask;
+  };
 </script>
 
 <div class="">
@@ -255,8 +262,16 @@
                   />
                 </div>
                 <div>
-                  {formatDay(taskForDay.start)}
-                  - {formatDay(taskForDay.stop)}
+                  <div>
+                    {formatDay(taskForDay.start)}
+                    - {formatDay(taskForDay.stop)}
+                  </div>
+                  <button
+                    onclick={() => onRestart(taskForDay.id)}
+                    class="hover:bg-green-300 px-2 rounded-md border border-gray-500"
+                  >
+                    re-start
+                  </button>
                 </div>
               </div>
             </div>
