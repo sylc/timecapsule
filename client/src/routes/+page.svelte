@@ -90,7 +90,6 @@
         0,
       );
       if (isThisWeek(new Date(tDay.day), { weekStartsOn: 1 })) {
-        console.log(tDay.day, dayTotal);
         res.total += dayTotal;
       }
       res.byDay[tDay.day] = dayTotal;
