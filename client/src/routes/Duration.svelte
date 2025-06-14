@@ -7,8 +7,9 @@
     } | number;
 
     type?: "hourFractions";
+    base?: number | undefined;
   }
-  const { duration, type }: Props = $props();
+  const { duration, type, base }: Props = $props();
 
   const durationUnified = $derived.by(() => {
     if (typeof duration !== "number") {
@@ -17,8 +18,19 @@
     const seconds = Math.floor((duration / 1000) % 60);
     const minutes = Math.floor((duration / (1000 * 60)) % 60);
     const hours = Math.floor(duration / (1000 * 60 * 60));
-    const hourFractions = (duration / (1000 * 60 * 60)).toFixed(2);
-    return { hours, minutes, seconds, hourFractions };
+    let hourFractions = duration / (1000 * 60 * 60);
+    if (base && type !== "hourFractions") {
+      throw Error("Not Implemented");
+    }
+    if (base && type === "hourFractions") {
+      hourFractions = base - hourFractions;
+    }
+    return {
+      hours,
+      minutes,
+      seconds,
+      hourFractions: hourFractions.toFixed(2),
+    };
   });
 </script>
 

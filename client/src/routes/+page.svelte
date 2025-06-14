@@ -11,14 +11,15 @@
   import { ulid } from "@std/ulid";
   import TimerDisplay from "./TimerDisplay.svelte";
   import { onMount } from "svelte";
-  import { formatDay, formatDuration } from "./utils";
+  import { formatDay } from "./utils";
   import Duration from "./Duration.svelte";
   import EditableDiv from "./EditableDiv.svelte";
   import type { Timer } from "../types";
-  import { projects } from "./states.svelte";
+  import { projects, settings } from "./states.svelte";
   import EditableDuration from "./EditableDuration.svelte";
 
   let status = $state<Timer>({ id: "", name: "", start: "", stop: "" });
+  let showInvert = $state(false);
 
   let formatted = $derived(
     format(new Date(status.start), "dd/MM"),
@@ -185,9 +186,19 @@
         />
       {/if}
     </div>
-    <div class="flex gap-x-2 text-slate-700">
+    <div
+      class="flex gap-x-2 text-slate-700"
+      onclick={() => showInvert = !showInvert}
+    >
+      <span class="text-xs text-slate-500">{
+        showInvert ? "Remaining" : ""
+      }</span>
       <div class="flex">
-        Today:&nbsp;<Duration duration={todayTotal} type="hourFractions" />h
+        Today:&nbsp;<Duration
+          duration={todayTotal}
+          type="hourFractions"
+          base={showInvert ? settings.hoursPerDay : undefined}
+        />h
       </div>
       <div class="text-xs" style="line-height: 2; color: gray">
         &#x1f534;&#xfe0e;
@@ -196,6 +207,7 @@
         This Week:&nbsp;<Duration
           duration={thisWeekTotal.total}
           type="hourFractions"
+          base={showInvert ? settings.hoursPerWeek : undefined}
         />h
       </div>
     </div>
