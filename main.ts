@@ -25,7 +25,7 @@ const kv = await Deno.openKv("./.tak/db");
 // Active timer
 webui.bind("startActiveTimer", async (e: WebUI.Event) => {
   console.log(e.arg.string(0), e.arg.string(1));
-  await startActiveTimer(e.arg.string(0), e.arg.string(1));
+  await startActiveTimer(e.arg.string(0), e.arg.string(1).trim());
 });
 
 webui.bind("stopActiveTimer", async () => {
@@ -38,6 +38,14 @@ webui.bind("updateActiveTimerStart", async (e: WebUI.Event) => {
 
   const timer = (await kv.get<Timer>(["activeTimer"])).value!;
   await kv.set(["activeTimer"], { ...timer, start });
+});
+
+webui.bind("updateActiveTimerName", async (e: WebUI.Event) => {
+  const newName = e.arg.string(0);
+  console.log("update active timer name:", newName);
+
+  const timer = (await kv.get<Timer>(["activeTimer"])).value!;
+  await kv.set(["activeTimer"], { ...timer, name: newName.trim() });
 });
 
 webui.bind("getActiveTimer", async (_e: WebUI.Event) => {
@@ -126,7 +134,7 @@ webui.bind("updateTimerName", async (e: WebUI.Event) => {
   console.log("update timer Name", timerId, newName);
 
   const timer = (await kv.get<Timer>(["timers", timerId])).value!;
-  await kv.set(["timers", timerId], { ...timer, name });
+  await kv.set(["timers", timerId], { ...timer, name: newName });
 });
 
 webui.bind("setTimerRange", async (e: WebUI.Event) => {

@@ -146,6 +146,10 @@
     const activeTask = JSON.parse(await webui.getActiveTimer());
     status = activeTask;
   };
+
+  const onTimerNameUpdate = async () => {
+    await webui.updateActiveTimerName(status.name);
+  };
 </script>
 
 <div class="">
@@ -155,8 +159,15 @@
       bind:value={status.name}
       onKeydown={(e) => {
         if (e.key === "Enter") {
-          onToggleStart("start");
+          if (status.start === "") {
+            onToggleStart("start");
+          } else {
+            onTimerNameUpdate();
+          }
         }
+      }}
+      onblur={(_e) => {
+        onTimerNameUpdate();
       }}
       placeholder="What are you working on?"
     />
